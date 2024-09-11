@@ -76,13 +76,13 @@ def main():
             st.write("Numerical Descriptive Statistics:")
             st.write(df.describe())
 
-        # Check if there are any categorical (object) columns before attempting to describe them
-        categorical_cols = df.select_dtypes(include=['object', 'category'])
-        if not categorical_cols.empty:
-            st.write("Categorical Descriptive Statistics:")
-            st.write(df.describe(include='object'))
-        else:
-            st.write("No categorical columns available for descriptive statistics.")
+            # # Check if there are any categorical (object) columns before attempting to describe them
+            # categorical_cols = df.select_dtypes(include=['object', 'category'])
+            # if not categorical_cols.empty:
+            #     st.write("Categorical Descriptive Statistics:")
+            #     st.write(df.describe(include='object'))
+            # else:
+            #     st.write("No categorical columns available for descriptive statistics.")
 
         # Correlation Analysis
         if st.checkbox("Show correlation matrix heatmap"):
