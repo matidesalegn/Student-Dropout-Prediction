@@ -1,0 +1,20 @@
+name: student-dropout-prediction
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.9
+  - pandas
+  - numpy
+  - scikit-learn
+  - tensorflow # or use pytorch if preferred
+  - streamlit
+  - matplotlib
+  - seaborn
+  - jupyterlab
+  - ipykernel
+  - pip
+  - pip:
+      - plotly
+      - statsmodels # for hypothesis testing
+      - other-package # add any other Python packages from PyPI here
