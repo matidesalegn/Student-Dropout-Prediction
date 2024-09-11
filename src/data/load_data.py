@@ -1,6 +1,7 @@
 # src/data/load_data.py
 
 import pandas as pd
+import os
 
 def load_dataset(file_path, delimiter=';'):
     """
@@ -11,8 +12,12 @@ def load_dataset(file_path, delimiter=';'):
     - delimiter (str): Delimiter used in the CSV file (default is ';').
 
     Returns:
-    - df (DataFrame): Loaded DataFrame.
+    - df (DataFrame): Loaded DataFrame or None if loading fails.
     """
+    if not os.path.exists(file_path):
+        print(f"Error: The file {file_path} does not exist.")
+        return None
+
     try:
         df = pd.read_csv(file_path, delimiter=delimiter)
         return df

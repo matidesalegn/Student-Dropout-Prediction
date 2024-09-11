@@ -16,17 +16,22 @@ def clean_column_names(df):
     df.columns = df.columns.str.replace('\t', '').str.strip()
     return df
 
-def handle_missing_values(df):
+def handle_missing_values(df, method='drop', fill_value=None):
     """
     Handle missing values in the DataFrame.
-
+    
     Parameters:
     - df (DataFrame): Original DataFrame.
-
+    - method (str): How to handle missing values. Options are 'drop' or 'fill'. Default is 'drop'.
+    - fill_value: Value to use for filling missing values (if method='fill'). Default is None.
+    
     Returns:
     - df (DataFrame): DataFrame with missing values handled.
     """
-    # Since no missing values are detected, this function can be expanded if needed.
+    if method == 'drop':
+        df = df.dropna()
+    elif method == 'fill':
+        df = df.fillna(fill_value)
     return df
 
 def detect_outliers(df, num_cols):
