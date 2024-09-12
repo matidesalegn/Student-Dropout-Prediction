@@ -1,5 +1,4 @@
-# src/app/streamlit_app.py
-
+#src/app/streamlit_app.py
 import streamlit as st
 import os
 import sys
@@ -9,6 +8,7 @@ import matplotlib.pyplot as plt
 from scipy import stats
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
+import joblib  # For loading saved models
 
 # Add src to the path to allow relative imports
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -20,8 +20,22 @@ from data.load_data import load_dataset
 from data.clean_data import clean_column_names, handle_missing_values, detect_outliers, cap_outliers
 from data.transform_data import encode_categorical_variables, scale_features, feature_engineering
 
+# Load the models
+def load_models():
+    model_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../models/'))
+
+    models = {
+        'Logistic Regression': joblib.load(os.path.join(model_dir, 'Logistic_Regression.joblib')),
+        'Random Forest': joblib.load(os.path.join(model_dir, 'Random_Forest.joblib')),
+        'Gradient Boosting': joblib.load(os.path.join(model_dir, 'Gradient_Boosting.joblib'))
+    }
+    return models
+
 def main():
     st.title("Student Dropout Prediction")
+
+    # Load models
+    models = load_models()
 
     # Set the path to the raw data CSV file
     data_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../data/raw/data.csv'))
@@ -40,7 +54,7 @@ def main():
         if st.checkbox("Show raw data"):
             st.write(df.head())
 
-        # 1. **Initial Data Exploration** ------------------------------------------------
+        # Initial Data Exploration
         if st.checkbox("Show initial data exploration"):
             st.write("### Dataset Shape:")
             st.write(f"Rows: {df.shape[0]}, Columns: {df.shape[1]}")
@@ -51,13 +65,12 @@ def main():
             st.write("### Summary Statistics:")
             st.write(df.describe())
 
-        # 2. **Missing Value Check** ----------------------------------------------------
+        # Check for missing values
         if st.checkbox("Check for missing values"):
             st.write("### Missing Values per Column:")
             missing_values = df.isnull().sum()
             st.write(missing_values[missing_values > 0])
 
-            # Visualize missing values using a heatmap
             if missing_values.sum() > 0:
                 st.write("### Missing Values Heatmap:")
                 plt.figure(figsize=(10, 6))
@@ -97,7 +110,7 @@ def main():
         if st.checkbox("Show preprocessed data"):
             st.write(df.head())
 
-        # 3. **Feature Importance Using RandomForest** -----------------------------------
+        # Feature Importance Using RandomForest
         if st.checkbox("Show feature importance"):
             st.write("### Feature Importance using RandomForest:")
             
@@ -154,6 +167,54 @@ def main():
             contingency_table = pd.crosstab(df['Gender'], df['Target'])
             chi2_stat, p_val, dof, expected = stats.chi2_contingency(contingency_table)
             st.write(f"Chi-square test results for Gender vs Dropout:\nChi-square stat: {chi2_stat}, P-value: {p_val}")
+
+        # Model Prediction Interface
+        st.write("### Model Prediction")
+
+        # Create a form for user input
+        with st.form(key='prediction_form'):
+            st.write("Enter details for prediction:")
+            
+            # Add form fields (update these fields based on your feature set)
+            admission_grade = st.number_input("Admission Grade")
+            curricular_units_1st_sem = st.number_input("Curricular Units 1st Sem Grade")
+            curricular_units_2nd_sem = st.number_input("Curricular Units 2nd Sem Grade")
+            age_group = st.selectbox("Age Group", options=['<18', '18-25', '26-35', '36-45', '45+'])
+            # Include other fields as needed
+
+            # Convert age group to numeric
+            age_group_mapping = {'<18': 0, '18-25': 1, '26-35': 2, '36-45': 3, '45+': 4}
+            age_group_numeric = age_group_mapping.get(age_group, -1)
+
+            # Submit button
+            submit_button = st.form_submit_button("Predict")
+
+            if submit_button:
+                # Prepare input data for prediction
+                input_data = pd.DataFrame({
+                    'Admission grade': [admission_grade],
+                    'Curricular units 1st sem (grade)': [curricular_units_1st_sem],
+                    'Curricular units 2nd sem (grade)': [curricular_units_2nd_sem],
+                    'Age Group': [age_group_numeric]
+                    # Include other features as needed
+                })
+                
+                # Apply the same preprocessing as used for training
+                input_data = encode_categorical_variables(input_data)
+                input_data = feature_engineering(input_data)
+                input_data = scale_features(input_data, scale_cols)
+                
+                # Make predictions with all models
+                predictions = {}
+                for name, model in models.items():
+                    pred = model.predict(input_data)
+                    predictions[name] = pred[0]
+                
+                # Display predictions
+                st.write("### Prediction Results")
+                for model_name, prediction in predictions.items():
+                    st.write(f"{model_name} Prediction: {prediction}")
+
     else:
         st.error("Failed to load data.")
 
