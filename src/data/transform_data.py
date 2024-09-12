@@ -145,25 +145,24 @@ def feature_engineering(df):
 def scale_features(df, scale_cols):
     """
     Scale the features in the DataFrame.
-    
     Parameters:
     - df (DataFrame): DataFrame containing the data.
     - scale_cols (list): List of columns to scale.
-    
     Returns:
     - df (DataFrame): DataFrame with scaled features.
     """
     # Print columns for debugging
     print("Columns in DataFrame for scaling:", df.columns)
-
-    # Check for missing columns
+    
+    # Remove missing columns from the scale list
     missing_cols = [col for col in scale_cols if col not in df.columns]
     if missing_cols:
-        raise ValueError(f"Columns {missing_cols} not found in the DataFrame.")
-
+        print(f"Warning: The following columns are missing and will be excluded from scaling: {missing_cols}")
+        scale_cols = [col for col in scale_cols if col in df.columns]
+    
     # Perform scaling (example with MinMaxScaler)
     from sklearn.preprocessing import MinMaxScaler
     scaler = MinMaxScaler()
     df[scale_cols] = scaler.fit_transform(df[scale_cols])
-
+    
     return df
