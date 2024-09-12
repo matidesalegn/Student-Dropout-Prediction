@@ -3,9 +3,9 @@ numpy
 scikit-learn
 matplotlib
 seaborn
-jupyterlab
-ipykernel
 plotly
 streamlit
+jupyterlab
+ipykernel
 statsmodels
 tensorflow
