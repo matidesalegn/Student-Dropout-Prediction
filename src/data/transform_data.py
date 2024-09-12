@@ -104,6 +104,12 @@ def feature_engineering(df):
     Returns:
     - df (DataFrame): DataFrame with new features.
     """
+    # Ensure required columns are present
+    required_columns = ['Age at enrollment', 'Curricular units 1st sem (grade)', 'Curricular units 2nd sem (grade)']
+    missing_cols = [col for col in required_columns if col not in df.columns]
+    if missing_cols:
+        raise ValueError(f"Missing required columns for feature engineering: {missing_cols}")
+    
     # Create individual derived features
     df = create_age_group(df)
     df = create_curricular_grades(df)

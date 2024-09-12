@@ -7,6 +7,8 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy import stats
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
 
 # Add src to the path to allow relative imports
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -34,9 +36,29 @@ def main():
         df = clean_column_names(df)
         df = handle_missing_values(df)
 
-        # Display raw data
-        if st.checkbox("Show raw data"):
-            st.write(df.head())
+        # 1. **Initial Data Exploration** ------------------------------------------------
+        if st.checkbox("Show initial data exploration"):
+            st.write("### Dataset Shape:")
+            st.write(f"Rows: {df.shape[0]}, Columns: {df.shape[1]}")
+
+            st.write("### Data Types:")
+            st.write(df.dtypes)
+
+            st.write("### Summary Statistics:")
+            st.write(df.describe())
+
+        # 2. **Missing Value Check** ----------------------------------------------------
+        if st.checkbox("Check for missing values"):
+            st.write("### Missing Values per Column:")
+            missing_values = df.isnull().sum()
+            st.write(missing_values[missing_values > 0])
+
+            # Visualize missing values using a heatmap
+            if missing_values.sum() > 0:
+                st.write("### Missing Values Heatmap:")
+                plt.figure(figsize=(10, 6))
+                sns.heatmap(df.isnull(), cbar=False, cmap='viridis')
+                st.pyplot(plt.gcf())
 
         # Outlier Detection
         num_cols = ['Admission grade', 'Curricular units 1st sem (grade)', 'Curricular units 2nd sem (grade)']
@@ -71,18 +93,41 @@ def main():
         if st.checkbox("Show preprocessed data"):
             st.write(df.head())
 
+        # 3. **Feature Importance Using RandomForest** -----------------------------------
+        if st.checkbox("Show feature importance"):
+            st.write("### Feature Importance using RandomForest:")
+            
+            # Prepare data for modeling
+            X = df.drop(columns='Target')
+            y = df['Target']
+
+            # Split the data for training (80%) and testing (20%)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+            # Train a RandomForestClassifier
+            model = RandomForestClassifier(n_estimators=100, random_state=42)
+            model.fit(X_train, y_train)
+
+            # Calculate feature importance
+            importance = model.feature_importances_
+            feature_importance_df = pd.DataFrame({
+                'Feature': X.columns,
+                'Importance': importance
+            }).sort_values(by='Importance', ascending=False)
+
+            # Display feature importance
+            st.write(feature_importance_df)
+
+            # Plot the feature importance
+            plt.figure(figsize=(10, 6))
+            sns.barplot(x='Importance', y='Feature', data=feature_importance_df)
+            plt.title("Feature Importance")
+            st.pyplot(plt.gcf())
+
         # Perform Descriptive Statistics
         if st.checkbox("Show descriptive statistics"):
             st.write("Numerical Descriptive Statistics:")
             st.write(df.describe())
-
-            # # Check if there are any categorical (object) columns before attempting to describe them
-            # categorical_cols = df.select_dtypes(include=['object', 'category'])
-            # if not categorical_cols.empty:
-            #     st.write("Categorical Descriptive Statistics:")
-            #     st.write(df.describe(include='object'))
-            # else:
-            #     st.write("No categorical columns available for descriptive statistics.")
 
         # Correlation Analysis
         if st.checkbox("Show correlation matrix heatmap"):
