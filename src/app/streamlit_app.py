@@ -36,6 +36,10 @@ def main():
         df = clean_column_names(df)
         df = handle_missing_values(df)
 
+        # Display raw data
+        if st.checkbox("Show raw data"):
+            st.write(df.head())
+
         # 1. **Initial Data Exploration** ------------------------------------------------
         if st.checkbox("Show initial data exploration"):
             st.write("### Dataset Shape:")
