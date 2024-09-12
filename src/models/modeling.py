@@ -1,4 +1,4 @@
-# src/app/modeling.py
+# src/models/modeling.py
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -61,12 +61,13 @@ def split_data(df, target_col):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     return X_train, X_test, y_train, y_test
 
-def build_and_evaluate_models(X_train, X_test, y_train, y_test):
+def build_and_evaluate_models(X_train, X_test, y_train, y_test, target_names):
     """
     Build and evaluate several models.
 
     Parameters:
     - X_train, X_test, y_train, y_test: Data splits for training and testing.
+    - target_names (list): List of target class names as strings.
     """
     models = {
         'Logistic Regression': LogisticRegression(max_iter=1000),
@@ -94,7 +95,7 @@ def build_and_evaluate_models(X_train, X_test, y_train, y_test):
             'Precision': precision,
             'Recall': recall,
             'F1 Score': f1,
-            'Classification Report': classification_report(y_test, y_pred)
+            'Classification Report': classification_report(y_test, y_pred, target_names=target_names)
         }
         
         print(f"\n{name} Model Performance:")
@@ -103,7 +104,7 @@ def build_and_evaluate_models(X_train, X_test, y_train, y_test):
         print(f"Recall: {recall:.4f}")
         print(f"F1 Score: {f1:.4f}")
         print("\nClassification Report:")
-        print(classification_report(y_test, y_pred))
+        print(classification_report(y_test, y_pred, target_names=target_names))
         
         # Save the model
         model_path = f'../../models/{name.replace(" ", "_")}.joblib'
@@ -130,8 +131,11 @@ def main():
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
     
+    # Get target class names as strings
+    target_names = [str(cls) for cls in df['Target'].unique()]
+    
     # Build and evaluate models
-    results = build_and_evaluate_models(X_train_scaled, X_test_scaled, y_train, y_test)
+    results = build_and_evaluate_models(X_train_scaled, X_test_scaled, y_train, y_test, target_names)
     
     return results
 
