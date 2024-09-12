@@ -113,7 +113,7 @@ def main():
         # Feature Importance Using RandomForest
         if st.checkbox("Show feature importance"):
             st.write("### Feature Importance using RandomForest:")
-            
+
             # Prepare data for modeling
             X = df.drop(columns='Target')
             y = df['Target']
@@ -171,10 +171,13 @@ def main():
         # Model Prediction Interface
         st.write("### Model Prediction")
 
+        # Extract the feature names from the training data
+        feature_names = X_train.columns.tolist()
+
         # Create a form for user input
         with st.form(key='prediction_form'):
             st.write("Enter details for prediction:")
-            
+
             # Add form fields (update these fields based on your feature set)
             admission_grade = st.number_input("Admission Grade")
             curricular_units_1st_sem = st.number_input("Curricular Units 1st Sem Grade")
@@ -198,18 +201,21 @@ def main():
                     'Age Group': [age_group_numeric]
                     # Include other features as needed
                 })
-                
+
                 # Apply the same preprocessing as used for training
                 input_data = encode_categorical_variables(input_data)
                 input_data = feature_engineering(input_data)
                 input_data = scale_features(input_data, scale_cols)
-                
+
+                # Ensure the input data matches the training features
+                input_data = input_data.reindex(columns=feature_names, fill_value=0)
+
                 # Make predictions with all models
                 predictions = {}
                 for name, model in models.items():
                     pred = model.predict(input_data)
                     predictions[name] = pred[0]
-                
+
                 # Display predictions
                 st.write("### Prediction Results")
                 for model_name, prediction in predictions.items():
