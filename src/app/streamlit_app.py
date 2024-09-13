@@ -110,17 +110,20 @@ def main():
         if st.checkbox("Show preprocessed data"):
             st.write(df.head())
 
+
         # Feature Importance Using RandomForest
+        # Prepare data for modeling
+        X = df.drop(columns='Target')
+        y = df['Target']
+
+        # Split the data for training (80%) and testing (20%)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+        # Feature Importance Using RandomForest
+        # Only show feature importance if the checkbox is selected
         if st.checkbox("Show feature importance"):
             st.write("### Feature Importance using RandomForest:")
-
-            # Prepare data for modeling
-            X = df.drop(columns='Target')
-            y = df['Target']
-
-            # Split the data for training (80%) and testing (20%)
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
+            
             # Train a RandomForestClassifier
             model = RandomForestClassifier(n_estimators=100, random_state=42)
             model.fit(X_train, y_train)
@@ -136,11 +139,9 @@ def main():
             st.write(feature_importance_df)
 
             # Plot the feature importance
-            plt.figure(figsize=(10, 6))
-            sns.barplot(x='Importance', y='Feature', data=feature_importance_df)
-            plt.title("Feature Importance")
-            st.pyplot(plt.gcf())
-
+            fig, ax = plt.subplots()
+            sns.barplot(x='Importance', y='Feature', data=feature_importance_df, ax=ax)
+            st.pyplot(fig)
         # Perform Descriptive Statistics
         if st.checkbox("Show descriptive statistics"):
             st.write("Numerical Descriptive Statistics:")
