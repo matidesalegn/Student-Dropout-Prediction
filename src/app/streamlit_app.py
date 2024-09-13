@@ -221,6 +221,32 @@ def main():
                 st.write("### Prediction Results")
                 for model_name, prediction in predictions.items():
                     st.write(f"{model_name} Prediction: {prediction}")
+                    
+         # Display Insights, Recommendations, and Conclusions
+        st.write("### Insights, Recommendations, and Conclusions")
+
+        st.subheader("Insights")
+        st.write("""
+        - The dataset contains 4,424 rows and 37 columns.
+        - Outliers were detected in key numerical variables such as Admission grade and semester grades.
+        - The T-test showed no significant difference between dropouts and graduates in Admission grades.
+        - Gender shows a significant impact on dropout rates according to the Chi-square test.
+        """)
+
+        st.subheader("Recommendations")
+        st.write("""
+        - Investigate missing values and handle them appropriately to improve model performance.
+        - Consider outlier treatment techniques like transformations to avoid skewing model predictions.
+        - Enhance feature engineering and explore additional models (e.g., XGBoost) for better accuracy.
+        - Address dataset imbalance (if present) to improve dropout predictions, especially related to gender.
+        """)
+
+        st.subheader("Conclusions")
+        st.write("""
+        - Admission grades alone may not be a strong predictor of dropouts.
+        - Gender has a notable influence on dropout rates, indicating a need for gender-targeted interventions.
+        - The current model is a good baseline, but improvements can be made with additional data processing and model tuning.
+        """)
 
     else:
         st.error("Failed to load data.")
