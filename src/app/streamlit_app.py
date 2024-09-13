@@ -25,8 +25,8 @@ def load_models():
     model_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../models/'))
 
     models = {
-        'Logistic Regression': joblib.load(os.path.join(model_dir, 'Logistic_Regression.joblib')),
-        'Random Forest': joblib.load(os.path.join(model_dir, 'Random_Forest.joblib')),
+        # 'Logistic Regression': joblib.load(os.path.join(model_dir, 'Logistic_Regression.joblib')),
+        # 'Random Forest': joblib.load(os.path.join(model_dir, 'Random_Forest.joblib')),
         'Gradient Boosting': joblib.load(os.path.join(model_dir, 'Gradient_Boosting.joblib'))
     }
     return models
