@@ -1,4 +1,3 @@
-#src/app/streamlit_app.py
 import streamlit as st
 import os
 import sys
@@ -8,6 +7,10 @@ import matplotlib.pyplot as plt
 from scipy import stats
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+# import plotly.express as px
+import matplotlib.pyplot as plt
 import joblib  # For loading saved models
 
 # Add src to the path to allow relative imports
@@ -20,7 +23,6 @@ from data.load_data import load_dataset
 from data.clean_data import clean_column_names, handle_missing_values, detect_outliers, cap_outliers
 from data.transform_data import encode_categorical_variables, scale_features, feature_engineering
 
-# Load the models
 # Define a function for univariate analysis
 def univariate_analysis(df):
     st.subheader("Univariate Analysis")
@@ -51,32 +53,59 @@ def bivariate_analysis(df):
     # Correlation matrix
     st.write("### Correlation Matrix")
     numerical_columns = df.select_dtypes(include=['int64', 'float64']).columns
+
+    # Display correlation matrix as heatmap
     correlation_matrix = df[numerical_columns].corr()
     fig, ax = plt.subplots(figsize=(10, 8))
     sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', ax=ax)
     st.pyplot(fig)
 
-    # Scatter plots for pairs of numerical columns
-    st.write("### Scatter Plot Pairs")
-    pair_plot = sns.pairplot(df[numerical_columns])
+    # Limit the number of columns for pairplot to avoid large image sizes
+    st.write("### Scatter Plot Pairs (Limited Features)")
+    selected_columns = numerical_columns[:5]  # Select only 5 columns for the pairplot
+    pair_plot = sns.pairplot(df[selected_columns])
     st.pyplot(pair_plot)
 
-# Define a function for multivariate analysis (PCA)
+# Define a function for multivariate analysis (PCA) using Matplotlib
 def multivariate_analysis(df):
     st.subheader("Multivariate Analysis")
 
     # PCA plot
     st.write("### Principal Component Analysis (PCA)")
+    
+    # Select only numerical columns
     numerical_columns = df.select_dtypes(include=['int64', 'float64']).columns
     df_scaled = StandardScaler().fit_transform(df[numerical_columns])
+    
+    # Perform PCA
     pca = PCA(n_components=2)
     pca_data = pca.fit_transform(df_scaled)
 
-    pca_df = pd.DataFrame(pca_data, columns=['PC1', 'PC2'])
-    pca_df['Target'] = df['Target']  # Add target for coloring
+    # Convert categorical 'Target' column to numeric codes for coloring
+    target_mapping = {'Dropout': 0, 'Enrolled': 1, 'Graduate': 2}  # Define the mapping
+    df['Target_Code'] = df['Target'].map(target_mapping)  # Map to numeric values
 
-    fig = px.scatter(pca_df, x='PC1', y='PC2', color='Target', title='PCA of Dataset')
-    st.plotly_chart(fig)
+    # Create a DataFrame for PCA results
+    pca_df = pd.DataFrame(pca_data, columns=['PC1', 'PC2'])
+    pca_df['Target_Code'] = df['Target_Code']  # Add numeric 'Target' column
+
+    # Plotting PCA using Matplotlib
+    fig, ax = plt.subplots()
+    scatter = ax.scatter(pca_df['PC1'], pca_df['PC2'], c=pca_df['Target_Code'], cmap='viridis')
+
+    # Add legend
+    legend_labels = {v: k for k, v in target_mapping.items()}  # Reverse the mapping for legend
+    handles, _ = scatter.legend_elements()
+    legend = ax.legend(handles, [legend_labels[i] for i in range(len(handles))], title="Target")
+    ax.add_artist(legend)
+
+    # Labels and title
+    ax.set_xlabel('Principal Component 1')
+    ax.set_ylabel('Principal Component 2')
+    ax.set_title('PCA of Dataset')
+
+    # Display plot in Streamlit
+    st.pyplot(fig)
 
 # Load the XGBoost model
 def load_xgboost_model():
@@ -116,6 +145,18 @@ def main():
         # Display raw data
         if st.checkbox("Show raw data"):
             st.write(df.head())
+
+        # Perform Univariate Analysis
+        if st.checkbox("Perform Univariate Analysis"):
+            univariate_analysis(df)
+
+        # Perform Bivariate Analysis
+        if st.checkbox("Perform Bivariate Analysis"):
+            bivariate_analysis(df)
+
+        # Perform Multivariate Analysis
+        if st.checkbox("Perform Multivariate Analysis"):
+            multivariate_analysis(df)
 
         # Initial Data Exploration
         if st.checkbox("Show initial data exploration"):
@@ -204,33 +245,7 @@ def main():
             fig, ax = plt.subplots()
             sns.barplot(x='Importance', y='Feature', data=feature_importance_df, ax=ax)
             st.pyplot(fig)
-        # Perform Descriptive Statistics
-        if st.checkbox("Show descriptive statistics"):
-            st.write("Numerical Descriptive Statistics:")
-            st.write(df.describe())
 
-        # Correlation Analysis
-        if st.checkbox("Show correlation matrix heatmap"):
-            numeric_df = df.select_dtypes(include=['number'])
-            correlation_matrix = numeric_df.corr()
-            fig, ax = plt.subplots(figsize=(12, 8))
-            sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt='.2f', ax=ax)
-            st.pyplot(fig)
-
-        # Hypothesis Testing: T-test for Admission Grade (Dropout vs Graduate)
-        dropouts = df[df['Target'] == 1]['Admission grade']
-        graduates = df[df['Target'] == 0]['Admission grade']
-        t_stat, p_value = stats.ttest_ind(dropouts, graduates)
-
-        if st.checkbox("Show t-test results for Admission Grade (Dropout vs Graduate)"):
-            st.write(f"T-test results:\nT-statistic: {t_stat}, P-value: {p_value}")
-
-        # Hypothesis Testing: Chi-square test for Gender vs Target
-        if st.checkbox("Show chi-square test results for Gender vs Dropout"):
-            contingency_table = pd.crosstab(df['Gender'], df['Target'])
-            chi2_stat, p_val, dof, expected = stats.chi2_contingency(contingency_table)
-            st.write(f"Chi-square test results for Gender vs Dropout:\nChi-square stat: {chi2_stat}, P-value: {p_val}")
-        
         # Model Prediction Interface
         st.write("### Model Prediction")
  
