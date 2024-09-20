@@ -8,3 +8,4 @@ seaborn
 jupyterlab
 plotly
 statsmodels
+xgboost
