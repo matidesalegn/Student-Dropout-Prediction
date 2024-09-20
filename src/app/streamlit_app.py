@@ -21,21 +21,81 @@ from data.clean_data import clean_column_names, handle_missing_values, detect_ou
 from data.transform_data import encode_categorical_variables, scale_features, feature_engineering
 
 # Load the models
-def load_models():
-    model_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../models/'))
+# Define a function for univariate analysis
+def univariate_analysis(df):
+    st.subheader("Univariate Analysis")
 
-    models = {
-        # 'Logistic Regression': joblib.load(os.path.join(model_dir, 'Logistic_Regression.joblib')),
-        # 'Random Forest': joblib.load(os.path.join(model_dir, 'Random_Forest.joblib')),
-        'Gradient Boosting': joblib.load(os.path.join(model_dir, 'Gradient_Boosting.joblib'))
-    }
-    return models
+    # Display histograms and box plots for numerical columns
+    st.write("### Histograms")
+    numerical_columns = df.select_dtypes(include=['int64', 'float64']).columns
+    for col in numerical_columns:
+        st.write(f"**{col}**")
+        fig, ax = plt.subplots(1, 2, figsize=(12, 4))
+        sns.histplot(df[col], ax=ax[0], kde=True)
+        ax[0].set_title(f"Histogram of {col}")
+        sns.boxplot(y=df[col], ax=ax[1])
+        ax[1].set_title(f"Boxplot of {col}")
+        st.pyplot(fig)
+
+    # Bar charts for categorical columns
+    st.write("### Bar Charts for Categorical Variables")
+    categorical_columns = df.select_dtypes(include=['object']).columns
+    for col in categorical_columns:
+        st.write(f"**{col}**")
+        st.bar_chart(df[col].value_counts())
+
+# Define a function for bivariate analysis
+def bivariate_analysis(df):
+    st.subheader("Bivariate Analysis")
+
+    # Correlation matrix
+    st.write("### Correlation Matrix")
+    numerical_columns = df.select_dtypes(include=['int64', 'float64']).columns
+    correlation_matrix = df[numerical_columns].corr()
+    fig, ax = plt.subplots(figsize=(10, 8))
+    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', ax=ax)
+    st.pyplot(fig)
+
+    # Scatter plots for pairs of numerical columns
+    st.write("### Scatter Plot Pairs")
+    pair_plot = sns.pairplot(df[numerical_columns])
+    st.pyplot(pair_plot)
+
+# Define a function for multivariate analysis (PCA)
+def multivariate_analysis(df):
+    st.subheader("Multivariate Analysis")
+
+    # PCA plot
+    st.write("### Principal Component Analysis (PCA)")
+    numerical_columns = df.select_dtypes(include=['int64', 'float64']).columns
+    df_scaled = StandardScaler().fit_transform(df[numerical_columns])
+    pca = PCA(n_components=2)
+    pca_data = pca.fit_transform(df_scaled)
+
+    pca_df = pd.DataFrame(pca_data, columns=['PC1', 'PC2'])
+    pca_df['Target'] = df['Target']  # Add target for coloring
+
+    fig = px.scatter(pca_df, x='PC1', y='PC2', color='Target', title='PCA of Dataset')
+    st.plotly_chart(fig)
+
+# Load the XGBoost model
+def load_xgboost_model():
+    model_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../models/'))
+    xgboost_model_path = os.path.join(model_dir, 'xgboost_model.pkl')
+    return joblib.load(xgboost_model_path)
+ 
+# Define a manual mapping for numeric predictions to human-readable labels
+prediction_mapping = {
+    0: "Dropout",
+    1: "Enrolled",
+    2: "Graduate"
+}
 
 def main():
     st.title("Student Dropout Prediction")
 
-    # Load models
-    models = load_models()
+    # Load XGBoost model
+    xgboost_model = load_xgboost_model()
 
     # Set the path to the raw data CSV file
     data_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../data/raw/data.csv'))
@@ -49,6 +109,9 @@ def main():
         # Data Cleaning
         df = clean_column_names(df)
         df = handle_missing_values(df)
+
+        # Remove the 'Target' column if it exists in the data (since it's the label, not a feature)
+        feature_cols = df.drop(columns=['Target']).columns.tolist() if 'Target' in df.columns else df.columns.tolist()
 
         # Display raw data
         if st.checkbox("Show raw data"):
@@ -110,7 +173,6 @@ def main():
         if st.checkbox("Show preprocessed data"):
             st.write(df.head())
 
-
         # Feature Importance Using RandomForest
         # Prepare data for modeling
         X = df.drop(columns='Target')
@@ -168,61 +230,67 @@ def main():
             contingency_table = pd.crosstab(df['Gender'], df['Target'])
             chi2_stat, p_val, dof, expected = stats.chi2_contingency(contingency_table)
             st.write(f"Chi-square test results for Gender vs Dropout:\nChi-square stat: {chi2_stat}, P-value: {p_val}")
-
+        
         # Model Prediction Interface
         st.write("### Model Prediction")
-
-        # Extract the feature names from the training data
-        feature_names = X_train.columns.tolist()
-
+ 
+        # Define columns for categorical and numerical inputs
+        categorical_cols = [
+            'Marital status', 'Application mode', 'Course', 'Daytime/evening attendance',
+            'Previous qualification', 'Nacionality', "Mother's qualification", "Father's qualification",
+            "Mother's occupation", "Father's occupation", 'Displaced', 'Educational special needs',
+            'Debtor', 'Tuition fees up to date', 'Gender', 'Scholarship holder', 'International'
+        ]
+ 
+        numerical_cols = [
+            'Application order', 'Previous qualification (grade)', 'Admission grade', 'Age at enrollment',
+            'Curricular units 1st sem (credited)', 'Curricular units 1st sem (enrolled)',
+            'Curricular units 1st sem (evaluations)', 'Curricular units 1st sem (approved)',
+            'Curricular units 1st sem (grade)', 'Curricular units 1st sem (without evaluations)',
+            'Curricular units 2nd sem (credited)', 'Curricular units 2nd sem (enrolled)',
+            'Curricular units 2nd sem (evaluations)', 'Curricular units 2nd sem (approved)',
+            'Curricular units 2nd sem (grade)', 'Curricular units 2nd sem (without evaluations)',
+            'Unemployment rate', 'Inflation rate', 'GDP'
+        ]
+ 
         # Create a form for user input
         with st.form(key='prediction_form'):
             st.write("Enter details for prediction:")
-
-            # Add form fields (update these fields based on your feature set)
-            admission_grade = st.number_input("Admission Grade")
-            curricular_units_1st_sem = st.number_input("Curricular Units 1st Sem Grade")
-            curricular_units_2nd_sem = st.number_input("Curricular Units 2nd Sem Grade")
-            age_group = st.selectbox("Age Group", options=['<18', '18-25', '26-35', '36-45', '45+'])
-            # Include other fields as needed
-
-            # Convert age group to numeric
-            age_group_mapping = {'<18': 0, '18-25': 1, '26-35': 2, '36-45': 3, '45+': 4}
-            age_group_numeric = age_group_mapping.get(age_group, -1)
-
+ 
+            # Input fields for categorical columns
+            user_input = {}
+            for col in categorical_cols:
+                user_input[col] = st.selectbox(f"{col}", df[col].unique())
+ 
+            # Input fields for numerical columns
+            for col in numerical_cols:
+                user_input[col] = st.number_input(f"{col}")
+ 
             # Submit button
             submit_button = st.form_submit_button("Predict")
-
+ 
             if submit_button:
-                # Prepare input data for prediction
-                input_data = pd.DataFrame({
-                    'Admission grade': [admission_grade],
-                    'Curricular units 1st sem (grade)': [curricular_units_1st_sem],
-                    'Curricular units 2nd sem (grade)': [curricular_units_2nd_sem],
-                    'Age Group': [age_group_numeric]
-                    # Include other features as needed
-                })
-
-                # Apply the same preprocessing as used for training
+                # Convert the input data to a DataFrame
+                input_data = pd.DataFrame([user_input])
+ 
+                # Preprocess the input data: Encoding, scaling, and feature engineering
                 input_data = encode_categorical_variables(input_data)
                 input_data = feature_engineering(input_data)
-                input_data = scale_features(input_data, scale_cols)
+                input_data = scale_features(input_data, numerical_cols)
+ 
+                # Ensure the input data matches the training features (excluding the 'Target' column)
+                input_data = input_data.reindex(columns=feature_cols, fill_value=0)
+ 
+                # Make predictions using the XGBoost model
+                numeric_prediction = xgboost_model.predict(input_data)[0]
+ 
+                # Use the manual mapping to convert the numeric prediction to human-readable label
+                label_prediction = prediction_mapping.get(numeric_prediction, "Unknown")
+ 
+                # Display prediction
+                st.write(f"Prediction: {label_prediction}")
 
-                # Ensure the input data matches the training features
-                input_data = input_data.reindex(columns=feature_names, fill_value=0)
-
-                # Make predictions with all models
-                predictions = {}
-                for name, model in models.items():
-                    pred = model.predict(input_data)
-                    predictions[name] = pred[0]
-
-                # Display predictions
-                st.write("### Prediction Results")
-                for model_name, prediction in predictions.items():
-                    st.write(f"{model_name} Prediction: {prediction}")
-                    
-         # Display Insights, Recommendations, and Conclusions
+        # Display Insights, Recommendations, and Conclusions
         st.write("### Insights, Recommendations, and Conclusions")
 
         st.subheader("Insights")
@@ -247,9 +315,9 @@ def main():
         - Gender has a notable influence on dropout rates, indicating a need for gender-targeted interventions.
         - The current model is a good baseline, but improvements can be made with additional data processing and model tuning.
         """)
-
+ 
     else:
         st.error("Failed to load data.")
-
+ 
 if __name__ == '__main__':
     main()

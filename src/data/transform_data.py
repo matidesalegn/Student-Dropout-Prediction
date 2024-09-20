@@ -36,25 +36,6 @@ def encode_categorical_variables(df, columns=None, encoding_type='label'):
 
     return df
 
-# def scale_features(df, num_cols):
-#     """
-#     Scale numerical features using StandardScaler.
-
-#     Parameters:
-#     - df (DataFrame): DataFrame containing the data.
-#     - num_cols (list): List of numerical columns to scale.
-
-#     Returns:
-#     - df (DataFrame): DataFrame with scaled features.
-#     """
-#     if not all(col in df.columns for col in num_cols):
-#         missing_cols = [col for col in num_cols if col not in df.columns]
-#         raise ValueError(f"Columns {missing_cols} not found in the DataFrame.")
-    
-#     scaler = StandardScaler()
-#     df[num_cols] = scaler.fit_transform(df[num_cols])
-#     return df
-
 def create_age_group(df):
     """
     Create 'Age Group' derived feature.
