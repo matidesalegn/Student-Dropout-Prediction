@@ -310,7 +310,7 @@ def main():
 
         st.subheader("Insights")
         st.write("""
-        - The dataset contains 4,424 rows and 37 columns.
+        - The dataset contains 4,424 rows and 38 columns.
         - Outliers were detected in key numerical variables such as Admission grade and semester grades.
         - The T-test showed no significant difference between dropouts and graduates in Admission grades.
         - Gender shows a significant impact on dropout rates according to the Chi-square test.
