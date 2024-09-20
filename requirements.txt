@@ -9,3 +9,5 @@ jupyterlab
 plotly
 statsmodels
 xgboost
+pytest
+pytest-cov
