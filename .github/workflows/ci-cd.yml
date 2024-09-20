@@ -28,7 +28,7 @@ jobs:
 
       - name: Set PYTHONPATH
         run: |
-          export PYTHONPATH="$PYTHONPATH:$(pwd)/src/data"
+          export PYTHONPATH="$PYTHONPATH:$(pwd)/src/data/"
 
       - name: Run tests
         run: |
